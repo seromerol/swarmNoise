@@ -5,3 +5,9 @@ El archivo tiene un codigo que funciona con unos datos de entrada analógica (pr
 
 ## sensibleNeuronDosServos.ino
 El archivo parte del perceptron básico pero le integra una funcion para generar los pesos aleatorios y, lo más importante, integra la parte analógica con dos servos y dos flexores: una pareja que se encarga de comunicar los datos de la entrada y otra que se encarga de comunicar los datos de los pesos de cada entrada. La activacion funciona igual que el perceptron por sigmoid.
+
+## carpeta Perceptron
+Contiene la librería donde las funciones de los códigos de arduino se compilan an una clase para facilitar el código.
+
+## pruebaLibreria
+Código de arduino donde se prueba la librería del punto anterior.
