@@ -51,6 +51,9 @@ String Perceptron::getWeights(){
 
 //funcion que imprime un dato con su etiqueta en la misma linea y separa con tab
 void Perceptron::printLine(String n, float b) {
+  Serial.print(n);
+  Serial.print(b);
+  Serial.print("\t");
 }
 
 
