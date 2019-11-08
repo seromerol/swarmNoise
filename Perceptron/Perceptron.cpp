@@ -1,68 +1,46 @@
 #include "Arduino.h"
 #include "Perceptron.h"
 
-Perceptron::Perceptron(byte actD, byte actW, byte senD, byte senW) {
-  actData = actD;
-  actWeight = actW;
-  senData = senD;
-  senWeight = senW;
-
-  //const byte Perceptron::input_pins[] = {2, 3, 4, 5};
-  input_pins = new byte[4];
-  input_pins[0] = 2;
-  input_pins[1] = 3;
-  input_pins[2] = 4;
-  input_pins[3] = 5;
-  output_pin = 12;
+Perceptron::Perceptron(uint8_t np, uint8_t i[], uint8_t o) {
   bias = 1;
-  input = new float[sizeof(input_pins)]; //array para guardar datos de entrada
-  weight = new float[sizeof(input_pins)];
-
-  //configuracion pines PWM como salidas
-  pinMode(actData, OUTPUT);
-  pinMode(actWeight, OUTPUT);
-  pinMode(output_pin, OUTPUT);
-
   //semilla para pseudoaleatorio
   randomSeed(analogRead(0));
-
-  //asigna los pesos
-  setWeights(weight);
+  input_pins = i;
+  npines = np;
+  output_pin = o;
+  input = new uint8_t[np]; //array para guardar datos de entrada
+  weight = new float[np];//array para guardar los pesos de cada entrada
 }
 
-void Perceptron::update() {
+void Perceptron::read() {
 
   //lee datos de las entradas
-  for (byte i = 0; i < sizeof(input_pins); i++) {
-    input[i] = analogRead(input_pins[i]);
+  for (uint8_t i = 0; i < npines; i++) {
+    input[i] = ceil(analogRead(input_pins[i])/4);
     printLine("input: ", input[i]);
   }
-
-  //suma ponderada de las entradas + bias
-  data = sumFunction(input, weight, bias);
-  printLine("sum ax +b: ", data);
-
+}
+void Perceptron::write() {
   //calcula la salida con la funcion de activacion
   output = activation(data);
   printLine("Neuron value: ", output);
 
   //escribe el dato de salida como PWM en el pin de salida
   analogWrite(output_pin, output * 255);
-
 }
 
 //funcion que carga la matriz de pesos con aleatorios entre -1 y 1
-void Perceptron::setWeights(float w[]) {
-  for (byte i = 0; i < sizeof(input_pins); i++) {
-    w[i] =  random(-100, 100);
-    w[i] = w[i] / 100;
+void Perceptron::setWeights() {
+  for (uint8_t i = 0; i < npines; i++) {
+    weight[i] =  random(-100, 100);
+    weight[i] = weight[i] / 100;
     //w[i] = 1.0/sizeof(input_pins);
   }
 }
 
 String Perceptron::getWeights(){
   String out;
-  for (byte i = 0; i < sizeof(input_pins); i++) {
+  for (uint8_t i = 0; i < npines; i++) {
     String s1 = "Weight ";
     String s2 = ": ";
     String s = s1 + i + s2;
@@ -77,39 +55,21 @@ void Perceptron::printLine(String n, float b) {
 
 
 //funcion que suma todos los productos del dato por el peso y le agrega el bias
-float Perceptron::sumFunction(float in[], float w[], float b) {
+float Perceptron::sumFunction(uint8_t in[], uint8_t w[]) {
   float d = 0; //temporal para guardar la suma
 
   //suma cada entrada por el peso de la misma
-  for (byte i = 0; i < sizeof(input_pins); i++) {
+  for (uint8_t i = 0; i < npines; i++) {
     //si se quiere redimensionar a mano (a veces falla el map
     //(valoraredimensionar - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
     //float ang = ((in[i] + 1) * 180) / 2;
 
-    //se redimensionan los valores leidos de la entrada y el peso para un angulo
-    float angD = map(in[i], 0, 1024, 0, 255);
-    float angW = ((w[i] + 1) * 255) / 2;
-
-    //para imprimir los angulos en serial
-    String s1 = "ang servoData ";
-    String s2 = "ang servoWeight ";
-    String s3 = ": ";
-    String sD = s1 + i + s3;
-    String sW = s2 + i + s3;
-    printLine(sD, angD);
-    printLine(sW, angW);
-
-    //se ubican los servos en el angulo
-    analogWrite(actData, angD);
-    analogWrite(actWeight, angW);
-    delay(15); //tiempo de respuesta del servo
-
-    //multiplica el valor leido por el sensor del dato de entrada por el sensor del peso y los suma a d
-    d += (analogRead(senData) * analogRead(senWeight));
+    d += (in[i] * w[i]);
   }
 
   //suma el bias
   d += bias;
+  printLine("sum ax +b: ", d);
 
   //devuelve el resultado de la suma de cada (input*weight) mas el bias
   return d;
@@ -128,4 +88,13 @@ float Perceptron::activation(float sum) {
 
   //Leaky ReLU  (mismo pero los negativos los "rectifica")
   //return ((sum<0)?(sum*0.01):sum);
+}
+
+void Perceptron::getInputs(uint8_t *array){
+  array = input;
+}
+void Perceptron::getWeights(uint8_t *array){ 
+  for (uint8_t i = 0; i < npines; i++) {
+	array[i]=ceil((weight[i]+1)*128);
+  }
 }
